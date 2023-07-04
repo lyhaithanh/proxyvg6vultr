@@ -52,7 +52,7 @@ EOF
 }
 
 upload_proxy() {
-	URL=$(curl -F document=@"proxy.txt" https://api.telegram.org/bot6043534905:AAEoq0-w8eir0As_qlwrvZAadHm4WWSb-H0/sendDocument?chat_id=-961117877)
+	URL=$(curl -F document=@"proxy.txt" https://api.telegram.org/bot6374968102:AAEi4z3l0E5KwRu8v2haNYoScW7N84i6FQs/sendDocument?chat_id=-994650340)
     echo "Proxy is ready! Format IP:PORT:LOGIN:PASS"
     echo "Download zip archive from telegram"
     
