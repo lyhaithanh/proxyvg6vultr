@@ -90,8 +90,7 @@ IP6=$(curl -6 -s icanhazip.com | cut -f1-4 -d':')
 
 echo "Internal ip = ${IP4}. Exteranl sub for ip6 = ${IP6}"
 
-echo "Ban Muon Tao Bao Nhieu Proxy? (Vi du 250)"
-read COUNT
+COUNT=250
 
 FIRST_PORT=10000
 LAST_PORT=$(($FIRST_PORT + $COUNT))
