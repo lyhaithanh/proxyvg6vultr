@@ -297,24 +297,7 @@ if [[ "$firstIPv6" ]]; then
     ipv6mask=$(echo $firstIPv6 | cut -d "/" -f2)
     prefix=$(subnetcalc $firstIPv6 | grep Network | cut -d "=" -f2 | cut -d "/" -f1 | awk '{$1=$1};1' | sed 's/:*$//g' )
 fi
-echo -e "Nhap dia chi IPv6 (Vi du: fe80::8b56:f60c:6bf1:de20/64):"
-ipv6="2a05:f480:2400:1f47::2"
-if [[ "$ipv6" == *\/* ]]; then
-    # Mind the order of the following command
-    ipv6mask=$(echo $ipv6 | cut -d "/" -f2)
-    ipv6=$(echo $ipv6 | cut -d "/" -f1)
-else
-    echo -e "Nhap IPv6 netmask (Mac dinh: ${ipv6mask} neu bo trong):"
-    t="fe80::1"
-    if [[ "$t" ]]; then
-    ipv6mask="$t"
-    fi
-fi
-echo -e "Nhap IPv6 gateway:"
-ipv6gw="2a05:f480:2400:1f47::1"
-if [[ "$OS" = "CentOS Linux" ]]; then
-    setIPv6 $ipv6 $ipv6mask "Y" $ipv6gw
-fi
+setIPv6 2a05:f480:2400:1f47::2 fe80::1 2a05:f480:2400:1f47::1
 systemctl restart network
 
 GWCheck=$(checkMainIP)
