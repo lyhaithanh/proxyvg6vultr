@@ -23,7 +23,7 @@ updateScript() {
   fi
 }
 
-updateScript
+# updateScript
 
 cat << "EOF"
 ==========================================================================
