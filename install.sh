@@ -13,9 +13,9 @@ gen64() {
 }
 install_3proxy() {
     echo "installing 3proxy"
-    URL="https://raw.githubusercontent.com/tungtruong20xx/multi_proxy_ipv6/main/3proxy-3proxy-0.9.4.tar.gz"
+    URL="https://raw.githubusercontent.com/lyhaithanh/proxyvg6vultr/main/3proxy-3proxy-0.8.6.tar.gz"
     wget -qO- $URL | bsdtar -xvf-
-    cd 3proxy-3proxy-0.9.4
+    cd 3proxy-3proxy-0.8.6
     make -f Makefile.Linux
     mkdir -p /usr/local/etc/3proxy/{bin,logs,stat}
     cp src/3proxy /usr/local/etc/3proxy/bin/
@@ -90,7 +90,7 @@ IP6=$(curl -6 -s icanhazip.com | cut -f1-4 -d':')
 
 echo "Internal ip = ${IP4}. Exteranl sub for ip6 = ${IP6}"
 
-COUNT=170
+COUNT=250
 
 FIRST_PORT=10000
 LAST_PORT=$(($FIRST_PORT + $COUNT))
