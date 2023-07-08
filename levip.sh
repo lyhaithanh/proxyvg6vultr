@@ -343,4 +343,3 @@ bash ${WORKDIR}/boot_iptables.sh
 systemctl stop 3proxy > /dev/null && sleep 2 && systemctl start 3proxy > /dev/null
 generateProxyListFile $pwProxyIPv6
 upload_proxy
-service 3proxy start > /dev/null
