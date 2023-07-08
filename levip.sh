@@ -320,6 +320,7 @@ if [[ "$OS" = "CentOS Linux" ]]; then
   setIPv6 $ipv6 $ipv6mask "Y" $ipv6gw
 fi
 systemctl restart network
+echo "restart network done"
 # TAO PROXY
 if [[ "$OS" = "CentOS Linux" ]]; then
 if [[ -z $(yum list installed | grep 3proxy) ]]; then
