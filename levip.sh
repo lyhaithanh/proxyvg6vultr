@@ -12,6 +12,19 @@ WORKDIR="/etc/lev/"
 WORKDATA="${WORKDIR}/data.txt"
 LOGFILE="/var/log/levip6.log"
 
+updateScript() {
+  wget ${UPDATE_URL} -o $LOGFILE -nv -N -P $BIN_DIR && chmod 777 $BIN_EXEC
+  if grep -q "URL:" "$LOGFILE"; then
+    echo -e "Updated to latest version!"
+    echo -e "Hay chay lai phan mem bang lenh: \"levip6\"."
+    exit 1
+  else
+    echo -e "No need to update!"
+  fi
+}
+
+updateScript
+
 cat << "EOF"
 ==========================================================================
   _                             _       _      _
@@ -237,13 +250,15 @@ $(awk -F "/" '{print $3 ":" $4 ":" $1 ":" $2 }' ${WORKDATA})
 EOF
 }
 
-
 upload_proxy() {
-	cd $WORKDIR
-	URL=$(curl -F document=@"proxy.txt" https://api.telegram.org/bot6374968102:AAEi4z3l0E5KwRu8v2haNYoScW7N84i6FQs/sendDocument?chat_id=@buyupvultr)
-    echo "Proxy is ready! Format IP:PORT:LOGIN:PASS"
-    echo "Download zip archive from telegram"
-    
+    cd $WORKDIR
+    local PASS=$(getRandomString)
+    zip --password $PASS lowendviet_proxy.zip proxy.txt > /dev/null
+    URL=$(curl -s -F "file=@lowendviet_proxy.zip" https://file.io | jq '.link')
+    echo "URL to download proxy: ${URL}"
+    echo "Password zip file: ${PASS}"
+}
+
 readWithTrim() {
   read temp
   echo -n "$temp" | sed 's/^ *//;s/ *$//'
@@ -275,37 +290,255 @@ ipv6="fe80::1"
 prefix="fe80"
 ipv6mask="64"
 
+while [[ $selection -ne 10 ]] ; do
+  ipv4=$(curl -4 -s icanhazip.com)
+  currentIPv6List=$(ip addr show dev ${network_card} | sed -e's/^.*inet6 \([^ ]*\).*$/\1/;t;d' | grep -v fe80)
+  firstIPv6=$(ip addr show dev ${network_card} | sed -e's/^.*inet6 \([^ ]*\).*$/\1/;t;d' | grep -v fe80 | head -n 1)
+  if [[ "$firstIPv6" ]]; then
+    ipv6=$(echo $firstIPv6)
+    ipv6mask=$(echo $firstIPv6 | cut -d "/" -f2)
+    prefix=$(subnetcalc $firstIPv6 | grep Network | cut -d "=" -f2 | cut -d "/" -f1 | awk '{$1=$1};1' | sed 's/:*$//g' )
+  fi
+  echo -e " "
+  echo -e "======== IPV6 SETTING BY LowendViet ========"
+  echo -e "    1. Enable/Disable IPv6"
+  echo -e "    2. Danh sach IPv6 hien tai."
+  echo -e "    3. Set IPv6 chinh."
+  echo -e "    4. Them IPv6 random."
+  echo -e "    5. Kiem tra IPv6 hoat dong."
+  echo -e "    6. Them IPv6 proxy."
+  echo -e "    7. Xoa toan bo proxy cu."
+  echo -e "    8. Hien thi danh sach proxy."
+  echo -e "    9. Update"
+  echo -e "    10. Thoat."
+  echo "Nhap lua chon cua ban: "
+  selection=$(readWithTrim)
 
-
-
-
-ipv4=$(curl -4 -s icanhazip.com)
-currentIPv6List=$(ip addr show dev ${network_card} | sed -e's/^.*inet6 \([^ ]*\).*$/\1/;t;d' | grep -v fe80)
-firstIPv6=$(ip addr show dev ${network_card} | sed -e's/^.*inet6 \([^ ]*\).*$/\1/;t;d' | grep -v fe80 | head -n 1)
-if [[ "$firstIPv6" ]]; then
-	ipv6=$(echo $firstIPv6)
-	ipv6mask=$(echo $firstIPv6 | cut -d "/" -f2)
-	prefix=$(subnetcalc $firstIPv6 | grep Network | cut -d "=" -f2 | cut -d "/" -f1 | awk '{$1=$1};1' | sed 's/:*$//g' )
-fi
-
+  if [[ $selection -eq 1 ]]; then
+    inet6=$(ip a | grep inet6)
+    if [[ $inet6 ]]; then
+      echo -e "IPv6 da duoc BAT, ban co muon tat di khong? Y/n?"
+      disable=$(readWithTrim)
+      if [[ "$disable" == "Y" || "$disable" == "y" ]]; then
+        if [[ -z $(grep net.ipv6.conf.default.disable_ipv6 "/etc/sysctl.conf") ]]; then
+          echo -e "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf
+          echo -e "net.ipv6.conf.all.disable_ipv6 = 1"  >> /etc/sysctl.conf
+          sysctl -p
+          sed -i '/IPV6INIT/d' /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          sed -i '/IPV6_AUTOCONF/d' /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          sed -i '/IPV6ADDR_SECONDARIES/d' /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          sed -i '/IPV6_DEFAULTGW/d' /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          systemctl restart network
+        else
+          sed -i "/net.ipv6.conf.default.disable_ipv6/c\net.ipv6.conf.default.disable_ipv6 = 1" /etc/sysctl.conf
+          sed -i "/net.ipv6.conf.all.disable_ipv6/c\net.ipv6.conf.default.disable_ipv6 = 1" /etc/sysctl.conf
+          sysctl -p
+          sed -i '/IPV6INIT/d' /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          sed -i '/IPV6_AUTOCONF/d' /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          sed -i '/IPV6ADDR_SECONDARIES/d' /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          sed -i '/IPV6_DEFAULTGW/d' /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          systemctl restart network
+          dhclient -6 -r
+        fi
+      fi
+    else
+      echo -e "IPv6 da bi TAT, ban co muon bat len khong? Y/n?"
+      enable=$(readWithTrim)
+      if [[ "$enable" == "Y" || "$enable" == "y" ]]; then
+        if [[ -z $(grep net.ipv6.conf.default.disable_ipv6 "/etc/sysctl.conf") ]]; then
+          echo -e "net.ipv6.conf.default.disable_ipv6 = 0" >> /etc/sysctl.conf
+          echo -e "net.ipv6.conf.all.disable_ipv6 = 0"  >> /etc/sysctl.conf
+          sysctl -p
+          echo -e 'IPV6INIT="yes"' >> /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          echo -e 'IPV6_AUTOCONF="no"' >> /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          systemctl restart network
+        else
+          sed -i "/net.ipv6.conf.default.disable_ipv6/c\net.ipv6.conf.default.disable_ipv6 = 0" /etc/sysctl.conf
+          sed -i "/net.ipv6.conf.all.disable_ipv6/c\net.ipv6.conf.default.disable_ipv6 = 0" /etc/sysctl.conf
+          sysctl -p
+          echo -e 'IPV6INIT="yes"' >> /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          echo -e 'IPV6_AUTOCONF="no"' >> /etc/sysconfig/network-scripts/ifcfg-${network_card}
+          systemctl restart network
+          dhclient -6 -r
+        fi
+      fi
+    fi
+# List IP
+  elif [[ $selection -eq 2 ]]; then
+    lineIndex=0
+    echo -e "======== Danh sach IPv6 ========"
+    echo "$currentIPv6List" | while IFS= read -r line ;
+    do
+        lineIndex=$(( lineIndex + 1 ))
+        ipv6mask=$(echo $line | cut -d "/" -f2)
+        prefix=$(getPrefix $line $ipv6mask)
+        echo "    ${lineIndex} - IPv6: ${line}, Prefix: ${prefix}, Netmask: ${ipv6mask}";
+    done
 
 # Set main IP
+  elif [[ $selection -eq 3 ]]; then
+    echo -e "Nhap dia chi IPv6 (Vi du: fe80::8b56:f60c:6bf1:de20/64):"
+    ipv6=$(readWithTrim)
+    if [[ "$ipv6" == *\/* ]]; then
+      # Mind the order of the following command
+      ipv6mask=$(echo $ipv6 | cut -d "/" -f2)
+      ipv6=$(echo $ipv6 | cut -d "/" -f1)
+    else
+      echo -e "Nhap IPv6 netmask (Mac dinh: ${ipv6mask} neu bo trong):"
+      t=$(readWithTrim)
+      if [[ "$t" ]]; then
+        ipv6mask="$t"
+      fi
+    fi
+    echo -e "Nhap IPv6 gateway:"
+    ipv6gw=$(readWithTrim)
+    if [[ "$OS" = "CentOS Linux" ]]; then
+      setIPv6 $ipv6 $ipv6mask "Y" $ipv6gw
+#      if grep -q IPV6ADDR_SECONDARIES "/etc/sysconfig/network-scripts/ifcfg-eth0"; then
+#        temp=$(cat /etc/sysconfig/network-scripts/ifcfg-eth0 | grep IPV6ADDR_SECONDARIES | cut -d "=" -f2 | sed -e 's/^"//' -e 's/"$//')
+#        if echo $temp | grep -q "$ipv6"; then
+#          temp=$(echo $temp | sed "s/${ipv6}\/${ipv6mask}//")
+#        fi
+#        ipv6NewList=$(echo -n "$temp $ipv6\/${ipv6mask}")
+#        sed -i "/IPV6ADDR_SECONDARIES=/c\IPV6ADDR_SECONDARIES=\"${ipv6NewList}\"" /etc/sysconfig/network-scripts/ifcfg-eth0
+#        sed -i "/IPV6_DEFAULTGW=/c\IPV6_DEFAULTGW=${ipv6gw}" /etc/sysconfig/network-scripts/ifcfg-eth0
+#      else
+#        echo -e 'IPV6INIT="yes"' >> /etc/sysconfig/network-scripts/ifcfg-eth0
+#        echo -e 'IPV6_AUTOCONF="no"' >> /etc/sysconfig/network-scripts/ifcfg-eth0
+#        echo -e "IPV6ADDR_SECONDARIES=\"${ipv6}/${ipv6mask}\"" >> /etc/sysconfig/network-scripts/ifcfg-eth0
+#        echo -e "IPV6_DEFAULTGW=${ipv6gw}" >> /etc/sysconfig/network-scripts/ifcfg-eth0
+#      fi
+    fi
+    systemctl restart network
 
-ipv6=$(2001:19f0:6401:1432::2)
-if [[ "$ipv6" == *\/* ]]; then
-  # Mind the order of the following command
-  ipv6mask=$(echo $ipv6 | cut -d "/" -f2)
-  ipv6=$(echo $ipv6 | cut -d "/" -f1)
-else
-  t=$(64)
-  if [[ "$t" ]]; then
-	ipv6mask="$t"
+# Add more random IPv6
+  elif [[ $selection -eq 4 ]]; then
+    GWCheck=$(checkMainIP)
+    if [[ "$GWCheck" = "NOGW" ]]; then
+      echo -e "[ERROR]Khong tim thay gateway, vui long cai dat IP chinh truoc!"
+    else
+      if [[ -z "$prefix" ]]; then
+        echo -e "Nhap IPv6 prefix:"
+        prefix=$(readWithTrim)
+        validate=$(validateIPv6 $prefix)
+        while [[ "$prefix" == *\/* || $validate == "invalid" ]]; do
+          echo -e "[ERROR] Prefix khong dung dinh dang, hay nhap lai."
+          otherPrefix=$(prefix)
+          validate=$(validateIPv6 $prefix)
+        done
+        prefix=$(echo "${prefix%::}")
+      else
+        echo -e "Prefix hien tai: $prefix. Neu ban can thay doi prefix, hay nhap vao ben duoi. Neu muon giu nguyen prefix, an Enter."
+        otherPrefix=$(readWithTrim)
+        validate=$(validateIPv6 $otherPrefix)
+        if [[ "$otherPrefix" ]]; then
+          while [[ "$otherPrefix" == *\/* || $validate == "invalid" ]]; do
+            echo -e "[ERROR] Prefix khong dung dinh dang, hay nhap lai."
+            otherPrefix=$(readWithTrim)
+            validate=$(validateIPv6 $otherPrefix)
+          done
+          prefix=$(echo "${otherPrefix%::}")
+        fi
+      fi
+      if [[ -z "$ipv6mask" ]]; then
+        echo -e "Nhap IPv6 netmask"
+        ipv6mask=$(readWithTrim)
+      else
+        echo -e "IPv6 Netmask hien tai: $ipv6mask. Neu ban can thay doi netmask, hay nhap vao ben duoi. Neu muon giu nguyen netmask, an Enter."
+        read otherIPv6Mask
+        if [[ "$otherIPv6Mask" ]]; then
+          ipv6mask=$otherIPv6Mask
+        fi
+      fi
+
+      ipv6=$(getRandomIPv6 $prefix $ipv6mask)
+      echo -e "Random IPv6: $ipv6"
+      echo -e ""
+      setIPv6 $ipv6 $ipv6mask "N"
+#      if [[ "$OS" = "CentOS Linux" ]]; then
+#        if grep -q IPV6ADDR_SECONDARIES "/etc/sysconfig/network-scripts/ifcfg-eth0"; then
+#          temp=$(cat /etc/sysconfig/network-scripts/ifcfg-eth0 | grep IPV6ADDR_SECONDARIES | cut -d "=" -f2 | sed -e 's/^"//' -e 's/"$//')
+#          ipv6NewList=$(echo -n "$ipv6\/${ipv6mask} $temp")
+#          sed -i "/IPV6ADDR_SECONDARIES=/c\IPV6ADDR_SECONDARIES=\"${ipv6NewList}\"" /etc/sysconfig/network-scripts/ifcfg-eth0
+#        else
+#          echo -e "IPV6ADDR_SECONDARIES=\""${ipv6}\/${ipv6mask}"\"" >> /etc/sysconfig/network-scripts/ifcfg-eth0
+#        fi
+#      fi
+      systemctl restart network
+    fi
+
+  # Test ipv6
+  elif [[ $selection -eq 5 ]]; then
+    echo -e ""
+    echo -e "======== Testing IPv6: IP out ========"
+    curl -6 http://ip.sb
+    echo -e "======== Ping test to ipv6.google.com ========"
+    ping6 ipv6.google.com -c4
+
+  # Tao IPv6 proxy
+  elif [[ $selection -eq 6 ]]; then
+    GWCheck=$(checkMainIP)
+    if [[ "$GWCheck" = "NOGW" ]]; then
+      echo -e "[ERROR]Khong tim thay gateway, vui long cai dat IP chinh truoc!"
+    else
+      if [[ "$OS" = "CentOS Linux" ]]; then
+        if [[ -z $(yum list installed | grep 3proxy) ]]; then
+          mkdir $WORKDIR && cd $_
+          mkdir -p ./3proxy
+          cd ./3proxy
+          wget -q https://file.lowendviet.com/Scripts/Linux/CentOS7/3proxy/3proxy-0.9.4.x86_64.rpm
+          temp=$(rpm -i 3proxy-0.9.4.x86_64.rpm)
+          systemctl enable 3proxy
+          echo "* hard nofile 999999" >>  /etc/security/limits.conf
+          echo "* soft nofile 999999" >>  /etc/security/limits.conf
+          echo "net.ipv6.conf.ens3.proxy_ndp=1" >> /etc/sysctl.conf
+          echo "net.ipv6.conf.all.proxy_ndp=1" >> /etc/sysctl.conf
+          echo "net.ipv6.conf.default.forwarding=1" >> /etc/sysctl.conf
+          echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.conf
+          echo "net.ipv6.ip_nonlocal_bind = 1" >> /etc/sysctl.conf
+          sed -i "/Description=/c\Description=3 Proxy optimized by LowendViet" /etc/sysctl.conf
+          sed -i "/LimitNOFILE=/c\LimitNOFILE=9999999" /etc/sysctl.conf
+          sed -i "/LimitNPROC=/c\LimitNPROC=9999999" /etc/sysctl.conf
+        fi
+
+      fi
+      echo -e ""
+      echo -e "Nhap so luong Proxy IPv6 ban muon tao. Mac dinh: 1."
+      read noProxyIPv6
+      if [[ -z "$noProxyIPv6" ]]; then
+        noProxyIPv6=1
+      fi
+
+      echo -e "Neu ban muon tao user/pass giong nhau cho tat ca proxy, nhap PASSWORD vao ben duoi. BO TRONG neu muon tao password ngau nhien."
+      read pwProxyIPv6
+
+      generateData $noProxyIPv6 $ipv4 $prefix $ipv6mask $pwProxyIPv6 >> $WORKDATA
+      generateFirewall
+      generateProxyConfig $pwProxyIPv6
+      ulimit -n 65535
+      service network restart > /dev/null
+      bash ${WORKDIR}/boot_iptables.sh
+      systemctl stop 3proxy > /dev/null && sleep 2 && systemctl start 3proxy > /dev/null
+      generateProxyListFile $pwProxyIPv6
+      upload_proxy
+      service 3proxy start > /dev/null
+    fi
+
+  elif [[ $selection -eq 7 ]]; then
+    rm -f $WORKDATA
+    generateProxyConfig
+    ulimit -n 65535
+    service network restart > /dev/null
+    systemctl stop 3proxy > /dev/null && sleep 2 && systemctl start 3proxy > /dev/null
+
+  elif [[ $selection -eq 8 ]]; then
+    if [[ -f ${WORKDATA} ]] ; then
+      printf "%15s %8s %5s %10s    %15s\n" "IPv4" "Port" "User" "Pass" "IPv6"
+      echo -e "==================================================================================="
+      awk -F "/" 'BEGIN{ORS="";} {printf "%15s %8s %5s %10s >> %15s\n",$3,$4,$1,$2,$5}' ${WORKDATA}
+    fi
+
+  elif [[ $selection -eq 9 ]]; then
+    updateScript
   fi
-fi
-ipv6gw=$(2001:19f0:6401:1432::1)
-if [[ "$OS" = "CentOS Linux" ]]; then
-  setIPv6 $ipv6 $ipv6mask "Y" $ipv6gw
-fi
-systemctl restart network
-echo "restart network done"
-
+done
