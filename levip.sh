@@ -349,8 +349,11 @@ GWCheck=$(checkMainIP)
         noProxyIPv6=1
       fi
       generateData $noProxyIPv6 $ipv4 $prefix $ipv6mask $pwProxyIPv6 >> $WORKDATA
+      read fff
       generateFirewall
+      read fff
       generateProxyConfig $pwProxyIPv6
+      read fff
       ulimit -n 65535
       service network restart > /dev/null
       bash ${WORKDIR}/boot_iptables.sh
