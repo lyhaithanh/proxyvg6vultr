@@ -298,7 +298,7 @@ if [[ "$firstIPv6" ]]; then
     prefix=$(subnetcalc $firstIPv6 | grep Network | cut -d "=" -f2 | cut -d "/" -f1 | awk '{$1=$1};1' | sed 's/:*$//g' )
 fi
 read noIPv6y
-echo noIPv6y
+printf noIPv6y
 setIPv6 2a05:f480:2400:1f47:: 64 2a05:f480:2400:1f47::
 systemctl restart network
 GWCheck=$(checkMainIP)
@@ -333,18 +333,17 @@ GWCheck=$(checkMainIP)
         noProxyIPv6=1
       fi
       generateData $noProxyIPv6 $ipv4 $prefix $ipv6mask $pwProxyIPv6 >> $WORKDATA
-      read fff
       generateFirewall
-      read fff
       generateProxyConfig $pwProxyIPv6
-      read fff
       ulimit -n 65535
       service network restart > /dev/null
       bash ${WORKDIR}/boot_iptables.sh
       systemctl stop 3proxy > /dev/null && sleep 2 && systemctl start 3proxy > /dev/null
       generateProxyListFile $pwProxyIPv6
       upload_proxy
-      service 3proxy start > /dev/null
+      echo "ENTER"
+      read dddd
+      service 3proxy start
     fi
 
 done
