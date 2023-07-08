@@ -13,7 +13,7 @@ gen64() {
 }
 install_3proxy() {
     echo "installing 3proxy"
-    URL="https://raw.githubusercontent.com/lyhaithanh/proxyvg6vultr/main/3proxy-3proxy-0.8.6.tar.gz"
+    URL="https://github.com/NXQCodeDao/proxyv6script/raw/main/3proxy-3proxy-0.8.6.tar.gz"
     wget -qO- $URL | bsdtar -xvf-
     cd 3proxy-3proxy-0.8.6
     make -f Makefile.Linux
@@ -46,7 +46,9 @@ EOF
 }
 
 gen_proxy_file_for_user() {
-    cat >proxy.txt <<EOF
+	echo "Dien Ten File Proxy Save"
+	read FileNameProxy
+    cat > $FileNameProxy <<EOF
 $(awk -F "/" '{print $3 ":" $4 ":" $1 ":" $2 }' ${WORKDATA})
 EOF
 }
@@ -55,8 +57,6 @@ upload_proxy() {
 	URL=$(curl -F document=@"proxy.txt" https://api.telegram.org/bot6374968102:AAEi4z3l0E5KwRu8v2haNYoScW7N84i6FQs/sendDocument?chat_id=@buyupvultr)
     echo "Proxy is ready! Format IP:PORT:LOGIN:PASS"
     echo "Download zip archive from telegram"
-    
-
 }
 gen_data() {
     seq $FIRST_PORT $LAST_PORT | while read port; do
@@ -90,7 +90,8 @@ IP6=$(curl -6 -s icanhazip.com | cut -f1-4 -d':')
 
 echo "Internal ip = ${IP4}. Exteranl sub for ip6 = ${IP6}"
 
-COUNT=250
+echo "Ban Muon Tao Bao Nhieu Proxy? (Vi du 250)"
+read COUNT
 
 FIRST_PORT=10000
 LAST_PORT=$(($FIRST_PORT + $COUNT))
