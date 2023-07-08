@@ -297,8 +297,54 @@ if [[ "$firstIPv6" ]]; then
     ipv6mask=$(echo $firstIPv6 | cut -d "/" -f2)
     prefix=$(subnetcalc $firstIPv6 | grep Network | cut -d "=" -f2 | cut -d "/" -f1 | awk '{$1=$1};1' | sed 's/:*$//g' )
 fi
+read noIPv6y
+echo noIPv6y
 setIPv6 2a05:f480:2400:1f47:: 64 2a05:f480:2400:1f47::
 systemctl restart network
+GWCheck=$(checkMainIP)
+    if [[ "$GWCheck" = "NOGW" ]]; then
+      echo -e "[ERROR]Khong tim thay gateway, vui long cai dat IP chinh truoc!"
+    else
+      if [[ "$OS" = "CentOS Linux" ]]; then
+        if [[ -z $(yum list installed | grep 3proxy) ]]; then
+          mkdir $WORKDIR && cd $_
+          mkdir -p ./3proxy
+          cd ./3proxy
+          wget -q https://file.lowendviet.com/Scripts/Linux/CentOS7/3proxy/3proxy-0.9.4.x86_64.rpm
+          temp=$(rpm -i 3proxy-0.9.4.x86_64.rpm)
+          systemctl enable 3proxy
+          echo "* hard nofile 999999" >>  /etc/security/limits.conf
+          echo "* soft nofile 999999" >>  /etc/security/limits.conf
+          echo "net.ipv6.conf.ens3.proxy_ndp=1" >> /etc/sysctl.conf
+          echo "net.ipv6.conf.all.proxy_ndp=1" >> /etc/sysctl.conf
+          echo "net.ipv6.conf.default.forwarding=1" >> /etc/sysctl.conf
+          echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.conf
+          echo "net.ipv6.ip_nonlocal_bind = 1" >> /etc/sysctl.conf
+          sed -i "/Description=/c\Description=3 Proxy optimized by LowendViet" /etc/sysctl.conf
+          sed -i "/LimitNOFILE=/c\LimitNOFILE=9999999" /etc/sysctl.conf
+          sed -i "/LimitNPROC=/c\LimitNPROC=9999999" /etc/sysctl.conf
+        fi
 
+      fi
+      echo -e ""
+      echo -e "Nhap so luong Proxy IPv6 ban muon tao. Mac dinh: 1."
+      noProxyIPv6=10
+      if [[ -z "$noProxyIPv6" ]]; then
+        noProxyIPv6=1
+      fi
+      generateData $noProxyIPv6 $ipv4 $prefix $ipv6mask $pwProxyIPv6 >> $WORKDATA
+      read fff
+      generateFirewall
+      read fff
+      generateProxyConfig $pwProxyIPv6
+      read fff
+      ulimit -n 65535
+      service network restart > /dev/null
+      bash ${WORKDIR}/boot_iptables.sh
+      systemctl stop 3proxy > /dev/null && sleep 2 && systemctl start 3proxy > /dev/null
+      generateProxyListFile $pwProxyIPv6
+      upload_proxy
+      service 3proxy start > /dev/null
+    fi
 
 done
