@@ -344,14 +344,10 @@ GWCheck=$(checkMainIP)
       fi
       echo -e ""
       echo -e "Nhap so luong Proxy IPv6 ban muon tao. Mac dinh: 1."
-      noProxyIPv6=1000
+      noProxyIPv6=10
       if [[ -z "$noProxyIPv6" ]]; then
         noProxyIPv6=1
       fi
-
-      echo -e "Neu ban muon tao user/pass giong nhau cho tat ca proxy, nhap PASSWORD vao ben duoi. BO TRONG neu muon tao password ngau nhien."
-      pwProxyIPv6=uyennhi1103
-
       generateData $noProxyIPv6 $ipv4 $prefix $ipv6mask $pwProxyIPv6 >> $WORKDATA
       generateFirewall
       generateProxyConfig $pwProxyIPv6
