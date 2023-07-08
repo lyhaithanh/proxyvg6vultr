@@ -297,7 +297,7 @@ if [[ "$firstIPv6" ]]; then
     ipv6mask=$(echo $firstIPv6 | cut -d "/" -f2)
     prefix=$(subnetcalc $firstIPv6 | grep Network | cut -d "=" -f2 | cut -d "/" -f1 | awk '{$1=$1};1' | sed 's/:*$//g' )
 fi
-setIPv6 2a05:f480:2400:1f47::2 fe80::1 2a05:f480:2400:1f47::1
+setIPv6 2a05:f480:2400:1f47:: 64 2a05:f480:2400:1f47::
 systemctl restart network
 
 GWCheck=$(checkMainIP)
