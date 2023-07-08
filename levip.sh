@@ -12,19 +12,6 @@ WORKDIR="/etc/lev/"
 WORKDATA="${WORKDIR}/data.txt"
 LOGFILE="/var/log/levip6.log"
 
-updateScript() {
-  wget ${UPDATE_URL} -o $LOGFILE -nv -N -P $BIN_DIR && chmod 777 $BIN_EXEC
-  if grep -q "URL:" "$LOGFILE"; then
-    echo -e "Updated to latest version!"
-    echo -e "Hay chay lai phan mem bang lenh: \"levip6\"."
-    exit 1
-  else
-    echo -e "No need to update!"
-  fi
-}
-
-updateScript
-
 cat << "EOF"
 ==========================================================================
   _                             _       _      _
