@@ -50,6 +50,50 @@ checkWorkData() {
         echo "data.txt does not exist in $WORKDIR."
     fi
 }
+install_3proxy() {
+    if rpm -q 3proxy >/dev/null 2>&1; then
+        echo "3proxy is already installed. Removing existing installation..."
+	yum -y remove gcc net-tools bsdtar zip make >/dev/null
+        yum -y remove 3proxy >/dev/null 2>&1
+        # Xóa các thư mục và tệp tin liên quan
+        rm -rf /3proxy
+        # Tiếp tục thực hiện các bước cài đặt mới
+    else
+        echo "3proxy is not installed. Proceeding with installation..."
+    fi
+
+    echo "installing 3proxy"
+    yum -y install gcc net-tools bsdtar zip make >/dev/null
+    mkdir -p /3proxy
+    cd /3proxy
+    # URL="https://it4.vn/0.9.3.tar.gz"
+    URL="https://raw.githubusercontent.com/hoan277/multi_proxy_ipv6/main/0.9.3.tar.gz"
+    wget -qO- $URL | bsdtar -xvf-
+    cd 3proxy-0.9.3
+    make -f Makefile.Linux
+    mkdir -p /usr/local/etc/3proxy/{bin,logs,stat}
+    mv /3proxy/3proxy-0.9.3/bin/3proxy /usr/local/etc/3proxy/bin/
+    # wget https://it4.vn/3proxy.service-Centos8 --output-document=/3proxy/3proxy-0.9.3/scripts/3proxy.service2
+    wget https://raw.githubusercontent.com/hoan277/multi_proxy_ipv6/main/3proxy.service-Centos8 --output-document=/3proxy/3proxy-0.9.3/scripts/3proxy.service2
+    cp /3proxy/3proxy-0.9.3/scripts/3proxy.service2 /usr/lib/systemd/system/3proxy.service
+    systemctl link /usr/lib/systemd/system/3proxy.service
+    systemctl daemon-reload
+    systemctl enable 3proxy
+    echo "* hard nofile 999999" >>  /etc/security/limits.conf
+    echo "* soft nofile 999999" >>  /etc/security/limits.conf
+    echo "net.ipv6.conf.$main_interface.proxy_ndp=1" >> /etc/sysctl.conf
+    echo "net.ipv6.conf.all.proxy_ndp=1" >> /etc/sysctl.conf
+    echo "net.ipv6.conf.default.forwarding=1" >> /etc/sysctl.conf
+    echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.conf
+    echo "net.ipv6.ip_nonlocal_bind = 1" >> /etc/sysctl.conf
+    sysctl -p
+    systemctl stop firewalld
+    systemctl disable firewalld
+
+    cd $WORKDIR
+
+    echo "3proxy installation completed."
+}
 
 executeCommands() {
     echo "Old Data Found . Try Delete "
@@ -119,8 +163,6 @@ $(awk -F "/" '{print "ifconfig '$main_interface' inet6 add " $5 "/64"}' ${WORKDA
 EOF
 }
 echo "installing apps"
-yum -y install gcc net-tools bsdtar zip make >/dev/null
-
 install_3proxy
 
 echo "working folder = /home/proxy-installer"
