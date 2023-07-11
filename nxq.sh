@@ -54,7 +54,7 @@ checkWorkData() {
 executeCommands() {
     echo "Old Data Found . Try Delete "
     rm -f "$WORKDATA"
-    generateProxyConfig
+    gen_3proxy
     ulimit -n 65535
     service network restart > /dev/null
     systemctl stop 3proxy > /dev/null && sleep 2 && systemctl start 3proxy > /dev/null
