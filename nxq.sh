@@ -22,7 +22,7 @@ checkWorkData() {
     fi
 }
 install_3proxy() {
-    if rpm -q 3proxy >/dev/null 2>&1; then
+    if [ -d "/3proxy" ]; then
         echo "3proxy is already installed. Removing existing installation..."
 	yum -y remove gcc net-tools bsdtar zip make >/dev/null
         yum -y remove 3proxy >/dev/null 2>&1
