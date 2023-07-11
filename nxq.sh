@@ -13,28 +13,8 @@ gen64() {
 	}
 	echo "$1:$(ip64):$(ip64):$(ip64):$(ip64)"
 }
-
-checkWorkData() {
-    if [ -f "$WORKDIR/data.txt" ]; then
-        executeCommands
-    else
-        echo "data.txt does not exist in $WORKDIR."
-    fi
-}
 install_3proxy() {
-    if [ -d "/3proxy" ]; then
-        echo "3proxy is already installed. Removing existing installation..."
-	yum -y remove gcc net-tools bsdtar zip make >/dev/null
-        yum -y remove 3proxy >/dev/null 2>&1
-        # Xóa các thư mục và tệp tin liên quan
-        rm -rf /3proxy
-        # Tiếp tục thực hiện các bước cài đặt mới
-    else
-        echo "3proxy is not installed. Proceeding with installation..."
-    fi
-
     echo "installing 3proxy"
-    yum -y install gcc net-tools bsdtar zip make >/dev/null
     mkdir -p /3proxy
     cd /3proxy
     # URL="https://it4.vn/0.9.3.tar.gz"
@@ -62,18 +42,6 @@ install_3proxy() {
     systemctl disable firewalld
 
     cd $WORKDIR
-
-    echo "3proxy installation completed."
-}
-
-executeCommands() {
-    echo "Old Data Found . Try Delete "
-    rm -f "$WORKDATA"
-    gen_3proxy
-    ulimit -n 65535
-    service network restart > /dev/null
-    systemctl stop 3proxy > /dev/null && sleep 2 && systemctl start 3proxy > /dev/null
-    echo "Delete success"
 }
 
 gen_3proxy() {
@@ -134,6 +102,8 @@ $(awk -F "/" '{print "ifconfig '$main_interface' inet6 add " $5 "/64"}' ${WORKDA
 EOF
 }
 echo "installing apps"
+yum -y install gcc net-tools bsdtar zip make >/dev/null
+
 install_3proxy
 
 echo "working folder = /home/proxy-installer"
@@ -148,8 +118,6 @@ echo "Internal ip = ${IP4}. Exteranl sub for ip6 = ${IP6}"
 
 FIRST_PORT=40000
 LAST_PORT=41999
-#      CHECK DATA PROXY
-checkWorkData
 
 gen_data >$WORKDIR/data.txt
 gen_iptables >$WORKDIR/boot_iptables.sh
