@@ -1,3 +1,4 @@
+main_interface=$(ip route get 8.8.8.8 | awk -- '{printf $5}')
 restore_configuration() {
     # Khôi phục tệp tin /etc/sysctl.conf từ bản sao đã sao lưu
     cp /etc/sysctl.conf.backup /etc/sysctl.conf
