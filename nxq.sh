@@ -13,36 +13,7 @@ gen64() {
 	}
 	echo "$1:$(ip64):$(ip64):$(ip64):$(ip64)"
 }
-install_3proxy() {
-    echo "installing 3proxy"
-    mkdir -p /3proxy
-    cd /3proxy
-    # URL="https://it4.vn/0.9.3.tar.gz"
-    URL="https://raw.githubusercontent.com/hoan277/multi_proxy_ipv6/main/0.9.3.tar.gz"
-    wget -qO- $URL | bsdtar -xvf-
-    cd 3proxy-0.9.3
-    make -f Makefile.Linux
-    mkdir -p /usr/local/etc/3proxy/{bin,logs,stat}
-    mv /3proxy/3proxy-0.9.3/bin/3proxy /usr/local/etc/3proxy/bin/
-    # wget https://it4.vn/3proxy.service-Centos8 --output-document=/3proxy/3proxy-0.9.3/scripts/3proxy.service2
-    wget https://raw.githubusercontent.com/hoan277/multi_proxy_ipv6/main/3proxy.service-Centos8 --output-document=/3proxy/3proxy-0.9.3/scripts/3proxy.service2
-    cp /3proxy/3proxy-0.9.3/scripts/3proxy.service2 /usr/lib/systemd/system/3proxy.service
-    systemctl link /usr/lib/systemd/system/3proxy.service
-    systemctl daemon-reload
-    systemctl enable 3proxy
-    echo "* hard nofile 999999" >>  /etc/security/limits.conf
-    echo "* soft nofile 999999" >>  /etc/security/limits.conf
-    echo "net.ipv6.conf.$main_interface.proxy_ndp=1" >> /etc/sysctl.conf
-    echo "net.ipv6.conf.all.proxy_ndp=1" >> /etc/sysctl.conf
-    echo "net.ipv6.conf.default.forwarding=1" >> /etc/sysctl.conf
-    echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.conf
-    echo "net.ipv6.ip_nonlocal_bind = 1" >> /etc/sysctl.conf
-    sysctl -p
-    systemctl stop firewalld
-    systemctl disable firewalld
 
-    cd $WORKDIR
-}
 checkWorkData() {
     if [ -f "$WORKDIR/data.txt" ]; then
         executeCommands
