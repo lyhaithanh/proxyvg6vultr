@@ -43,6 +43,23 @@ install_3proxy() {
 
     cd $WORKDIR
 }
+checkWorkData() {
+    if [ -f "$WORKDIR/data.txt" ]; then
+        executeCommands
+    else
+        echo "data.txt does not exist in $WORKDIR."
+    fi
+}
+
+executeCommands() {
+    echo "Old Data Found . Try Delete "
+    rm -f "$WORKDATA"
+    generateProxyConfig
+    ulimit -n 65535
+    service network restart > /dev/null
+    systemctl stop 3proxy > /dev/null && sleep 2 && systemctl start 3proxy > /dev/null
+    echo "Delete success"
+}
 
 gen_3proxy() {
     cat <<EOF
@@ -76,9 +93,9 @@ EOF
 }
 
 upload_proxy() {
-  cd $WORKDIR
-	URL=$(curl -F document=@"proxy.txt" https://api.telegram.org/bot6043534905:AAEoq0-w8eir0As_qlwrvZAadHm4WWSb-H0/sendDocument?chat_id=-961117877)
-    echo "Proxy is ready! Format IP:PORT:LOGIN:PASS"
+ #  cd $WORKDIR
+	# URL=$(curl -F document=@"proxy.txt" https://api.telegram.org/bot6374968102:AAEi4z3l0E5KwRu8v2haNYoScW7N84i6FQs/sendDocument?chat_id=@buyupvultr)
+ #    echo "Proxy is ready! Format IP:PORT:LOGIN:PASS"
     echo "Download zip archive from telegram"
     cat /home/proxy-installer/proxy.txt
     
@@ -117,7 +134,9 @@ IP6=$(curl -6 -s icanhazip.com | cut -f1-4 -d':')
 echo "Internal ip = ${IP4}. Exteranl sub for ip6 = ${IP6}"
 
 FIRST_PORT=40000
-LAST_PORT=41000
+LAST_PORT=41999
+#      CHECK DATA PROXY
+checkWorkData
 
 gen_data >$WORKDIR/data.txt
 gen_iptables >$WORKDIR/boot_iptables.sh
