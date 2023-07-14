@@ -77,8 +77,8 @@ upload_proxy() {
  #  cd $WORKDIR
 	# URL=$(curl -F document=@"proxy.txt" https://api.telegram.org/bot6374968102:AAEi4z3l0E5KwRu8v2haNYoScW7N84i6FQs/sendDocument?chat_id=@buyupvultr)
  #    echo "Proxy is ready! Format IP:PORT:LOGIN:PASS"
-    echo "All Proxy Create Done."
     cat /home/proxy-installer/proxy.txt
+    echo "All Proxy Create Done."
     
 
 }
